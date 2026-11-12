@@ -201,6 +201,16 @@ jobs:
         run: |
           wget "${{ inputs.ipa_url }}" --no-verbose -O youtube.ipa
           file_type=$(file --mime-type -b youtube.ipa)
+          if [[ "$file_type" == "text/html" ]]; then
+            ipa_link=$(grep -oE 'href="[^"]+\.ipa([^"]*)?"' youtube.ipa | head -n1 | sed -E 's/^href="([^"]+)".*/\1/')
+            if [[ -n "$ipa_link" ]]; then
+              if [[ "$ipa_link" == /* ]]; then
+                ipa_link="https://github.com$ipa_link"
+              fi
+              wget "$ipa_link" --no-verbose -O youtube.ipa
+              file_type=$(file --mime-type -b youtube.ipa)
+            fi
+          fi
           if [[ "$file_type" != "application/x-ios-app" && "$file_type" != "application/zip" ]]; then
             echo "::error::Validation failed: The downloaded file is not a valid IPA. Detected type: $file_type."
             exit 1
